@@ -1,0 +1,388 @@
+name:                validation-warning
+version:             0.0
+cabal-version:       >=1.24
+
+----------------------------------------
+
+build-type:          Simple 
+category:            Data 
+synopsis:            TODO 
+description:         
+ .
+ TODO
+ . 
+ See the source of "Validation.Warning.Example" for an example.
+ .
+ Quickstart:
+ .
+ @
+ import Validation.Warning
+ \-- TODO
+ @
+ .
+ Transitive dependencies:
+ .
+ .
+ <<validation-warning-dependencies.png>>
+ .
+
+homepage:            http://github.com/sboosali/validation-warning#readme
+bug-reports:         http://github.com/sboosali/validation-warning/issues
+author:              Spiros Boosalis
+maintainer:          samboosalis@gmail.com
+copyright:           2018 Spiros Boosalis
+license:             BSD3
+license-file:        LICENSE
+stability:           provisional
+tested-with:
+  GHC == 8.2.2
+-- GHC == 8.0.2
+
+-- PVP
+-- https://wiki.haskell.org/Package_versioning_policy
+-- "A.B is known as the major version number, and C the minor version number."
+
+----------------------------------------
+
+extra-source-files:
+  README.md
+  stack.yaml
+  .travis.yml
+  HLint.hs
+  metadata/dependencies.dot
+  metadata/dependencies.png
+  metadata/dependencies.txt
+
+-- data-files:
+--   data/
+
+source-repository head
+  type:     git
+  location: https://github.com/sboosali/validation-warning
+
+----------------------------------------
+-- FLAGS
+
+flag examples
+  default:     True
+  description: Build the examples in @examples/@. They are exposed library modules, for better haddocks and for guaranteeing that they typecheck. 
+
+-- You can disable the doctests test suite with -f-test-doctest.
+flag test-doctest
+  default:     True 
+ description: Run the doctests (with the eponymous `doctest`), called the `test documentation` unit (in this cabal file). 
+  manual:      True
+
+-- You can disable the HUnit test suite with -f-test-unit. 
+flag test-unit
+  default:     True 
+ description: Run the unit tests, called the `test unit` unit (in this cabal file).  
+  manual:      True
+
+-- You can disable the QuickCheck test suite with -f-test-unit. 
+flag test-properties
+  default:     True 
+ description: Run the property tests (i.e. QuickCheck), called the `test properties` unit (in this cabal file).  
+  manual:      True
+
+-- flag test-static
+--   default: False
+--   description: Whether to build the `static` test modules; i.e. the fact that they type check correctly is the test, there's nothing (necessarily) "dynamic" that is tested by running. 
+--   manual: True
+
+-- flag test-macros
+--   default: False
+--   description: Run any macro tests (i.e. TemplateHaskell), called the `test templates` unit (in this cabal file).  
+--   manual:  True
+
+flag bench-speed
+  default:     True 
+  description: Execute the benchmarks (which may take a long time).
+  manual:      True
+
+flag dump-splices
+  default:     False
+  description: Make the `template` test suite dump its template-haskell splices.
+  manual:      True
+
+-- flag orphans
+--  default: False
+--  description: Implement orphan instances for TODO, at the cost of more dependencies and, obviously, the presence of orphans. Note: this option is provided for advanced users. 
+--  manual: True
+
+----------------------------------------
+-- LIBRARY
+
+library
+ hs-source-dirs:      sources
+
+ ghc-options:
+  -Wall
+  -Wcompat
+
+  -- disable
+  -Wno-unticked-promoted-constructors
+
+  -- enable
+  -Wincomplete-uni-patterns
+  -Wincomplete-record-updates
+  -Widentities
+  -Wmissing-methods
+
+  -- raise a warning into an error
+  -- -Werror=missing-fields
+
+  -- use `typed-holes`, not `undefined`, during development
+  -fdefer-typed-holes
+  -Wtyped-holes
+
+ default-language:   Haskell2010
+
+ -- NOTE -XNoImplicitPrelude 
+ default-extensions:
+   NoImplicitPrelude
+   -- deriving
+   AutoDeriveTypeable DeriveDataTypeable DeriveGeneric DeriveFunctor DeriveFoldable DeriveTraversable DeriveLift StandaloneDeriving
+   -- syntax
+   PackageImports LambdaCase EmptyCase TypeOperators PostfixOperators BangPatterns KindSignatures NamedFieldPuns RecordWildCards TupleSections MultiWayIf DoAndIfThenElse EmptyDataDecls InstanceSigs
+   -- typeclasses
+   MultiParamTypeClasses FlexibleContexts FlexibleInstances TypeFamilies FunctionalDependencies
+   -- patterns
+   ViewPatterns PatternSynonyms
+   -- (miscellaneous)
+   ScopedTypeVariables
+
+ other-extensions:
+  -- macros
+  TemplateHaskell
+  -- QuasiQuotes
+  -- syntax (of literals)
+  OverloadedStrings OverloadedLists
+  -- RebindableSyntax
+  -- kinds
+  -- DataKinds ConstraintKinds
+  -- harmful to inference
+  -- GADTs RankNTypes
+  -- (miscellaneous)
+
+ if impl(ghc >= 8.2)
+    ghc-options: -Wcpp-undef
+    -- for `base-feature-macros`
+
+ exposed-modules:
+                 Validation.Warning
+                 Validation.Warning.Types
+                 Validation.Warning.Core
+                 Validation.Warning.Derived
+                 Validation.Warning.Example
+ other-modules:
+                 Validation.Warning.Extra
+                 -- Paths_validation_warning
+-- autogen-modules:
+                 -- Paths_validation_warning
+
+ if flag(examples)
+    hs-source-dirs: examples
+    exposed-modules:
+      Examples_validation_warning
+      Example.Validation.Warning
+
+ build-depends:
+-- boot libraries / standard library
+    base >=4.7 && <5
+  , text 
+  , bytestring
+  , transformers
+  , mtl
+  , containers
+
+-- mine 
+  , spiros >=0.2
+  -- , enumerate >=0.2 
+
+-- extended standard library 
+  , deepseq
+  , hashable
+  , unordered-containers
+
+-- ekmett 
+  , exceptions
+  , lens
+
+-- other packages 
+
+----------------------------------------
+-- TESTS...
+
+----------------------------------------
+
+test-suite doctest
+ if (!flag(test-doctest) || impl(ghcjs))
+    buildable: False
+    -- (`ghcjsi` just doesn't work? or `doctest` needs the GHC API?)
+
+ hs-source-dirs:      test
+ main-is:             DocTests.hs
+ type:                exitcode-stdio-1.0
+
+ default-language:    Haskell2010
+ ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+ build-depends:
+    base
+  , validation-warning
+  , doctest
+
+----------------------------------------
+
+-- $ stack test unit
+test-suite unit
+ if !flag(test-unit)
+    buildable: False
+
+ hs-source-dirs: test
+ main-is:        UnitTests.hs
+ 
+ type:             exitcode-stdio-1.0
+ default-language: Haskell2010
+ ghc-options:      
+   -Wall -threaded -rtsopts -with-rtsopts=-N
+
+ other-modules:
+  Validation.Warning.Test
+
+ build-depends:
+    base
+  , validation-warning 
+  , tasty
+  , tasty-hunit
+  -- , hspec      >=2.2
+
+----------------------------------------
+
+-- $ stack test properties 
+test-suite properties 
+ if !flag(test-properties)
+    buildable: False
+
+ hs-source-dirs:      test
+ main-is:             PropertyTests.hs
+
+ type:                exitcode-stdio-1.0
+ default-language:    Haskell2010
+ ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+ other-modules:
+  Validation.Warning.Properties 
+
+ build-depends:
+    base
+  , validation-warning
+  , tasty
+  -- , QuickCheck  >=2.8
+  -- , tasty-quickcheck
+  -- , smallcheck >=1.1
+  -- , tasty-smallcheck
+  , hedgehog
+  , tasty-hedgehog
+
+----------------------------------------
+-- STATIC TESTS
+
+-- test-suite static
+--  if !flag(test-static)
+--     buildable: False
+-- 
+--  hs-source-dirs: test
+--  main-is:        StaticTests.hs
+--  other-modules:
+--   StaticTests.Example
+-- 
+--  type:                exitcode-stdio-1.0
+--  default-language:    Haskell2010
+--  ghc-options:         -Wall 
+-- 
+--  build-depends:
+--     base
+--   , validation-warning
+
+----------------------------------------
+
+-- Template Haskell 
+-- Verify that Template Haskell expansion works
+-- test-suite macros
+--  if !flag(test-macros)
+--     buildable: False
+-- 
+--  hs-source-dirs:      test
+--  main-is:             TemplateHaskellTests.hs
+--  type:             exitcode-stdio-1.0
+--  default-language: Haskell2010
+-- 
+--  ghc-options:      -Wall -threaded
+-- 
+--  if flag(dump-splices)
+--     ghc-options: -ddump-splices
+-- 
+--  build-depends:
+--     base
+--   , validation-warning
+--   , template-haskell
+--   -- , lens
+
+----------------------------------------
+-- BENCHMARKS
+
+-- $ stack bench 
+benchmark speed
+ if !flag(bench-speed)
+    buildable: False
+
+ hs-source-dirs:      benchmark
+ main-is:             Speed.hs
+
+ type: exitcode-stdio-1.0
+ default-language: Haskell2010
+
+ ghc-options:
+   -Wall -threaded
+   -O2 -fdicts-cheap -funbox-strict-fields
+
+ build-depends:
+    base
+  , validation-warning
+  , criterion
+  , deepseq
+
+----------------------------------------
+-- EXECUTABLES
+
+executable example-validation-warning
+ hs-source-dirs:      executables
+ main-is:             Main.hs
+
+ default-language:    Haskell2010
+ ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+
+ build-depends:
+    base
+  , validation-warning
+
+----------------------------------------
+-- NOTES
+
+-- originally generated with this command:  
+-- 
+-- $ stack new validation-warning https://raw.githubusercontent.com/sboosali/configuration/master/stack/templates/spirosboosalis.hsfiles -p "module:Validation.Warning" -p "filepath:Validation/Warning"
+-- 
+-- given this configuration in `~/.stack/config.yaml`: 
+-- 
+-- templates:
+--   params:
+--     author-email:    samboosalis@gmail.com 
+--     author-name:     Spiros Boosalis 
+--     github-username: sboosali 
+--     copyright:       2018 Spiros Boosalis  
+--     synopsis:        TODO 
+
+----------------------------------------
